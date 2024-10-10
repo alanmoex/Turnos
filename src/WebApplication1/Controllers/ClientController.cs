@@ -21,7 +21,7 @@ namespace API.Controllers
         {
             _clientService = clientService;
         }
-
+        [AllowAnonymous]
         [HttpGet("[action]")]
         public ActionResult<List<ClientDto?>> GetAllClients()
         {
@@ -74,6 +74,7 @@ namespace API.Controllers
             return Ok();
         }
 
+        [AllowAnonymous]
         [HttpDelete("[action]/{id}")]
         public ActionResult PermanentDeletionClient([FromRoute] int id)
         {
@@ -105,5 +106,36 @@ namespace API.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [AllowAnonymous]
+        [HttpPut("[action]")]
+        public ActionResult RequestPasswordReset([FromBody] string email)
+        {
+            try
+            {
+                _clientService.RequestPassReset(email);
+                return Ok();
+            }
+            catch(NotFoundException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPut("[action]")]
+        public ActionResult ResetPassword(ResetPasswordRequest request)
+        {
+            try
+            {
+                _clientService.ResetPassword(request); 
+                return Ok();
+            }
+            catch(Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
     }
 }

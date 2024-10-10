@@ -5,6 +5,7 @@ using MailKit.Security;
 using MimeKit.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
+using Domain.Entities;
 
 
 namespace Infrastructure.Services
@@ -49,26 +50,77 @@ namespace Infrastructure.Services
             smtp.Disconnect(true);
         }
 
-        public void SendAccountConfirmationEmail(string addressee)
+        public void AccountCreationConfirmationEmail(string addressee, string nameUser) //envia correo de bienvenida
+        {
+            if(string.IsNullOrWhiteSpace(addressee))
+            {
+               throw new ArgumentNullException("The recipient cannto be empty", nameof(addressee));
+            }
+            var email = new MimeMessage();
+            email.From.Add(MailboxAddress.Parse(_options.UserName));
+            email.To.Add(MailboxAddress.Parse(addressee));
+            email.Subject = "Useted se a registrado en Che Turnos";
+            email.Body = new TextPart(TextFormat.Html)
+            {
+                Text = $@"<h2 style=""color: #333; text-align: center;"">¡Bienvenido a CHE Turnos!</h2>
+                   <p style=""font-size: 16px; color: #555;"">Hola <strong>{nameUser}</strong>,</p>
+                   <p style=""font-size: 16px; color: #555;"">Estamos emocionados de informarte que tu registro fue exitoso. Ahora puedes comenzar a explorar tu cuenta.</p>"
+            };
+
+            try
+            {
+                using var smtp = new MailKit.Net.Smtp.SmtpClient();
+                smtp.Connect(_options.Host, _options.Port, SecureSocketOptions.StartTls);
+                smtp.Authenticate(_options.UserName, _options.Password);
+                smtp.Send(email);
+                smtp.Disconnect(true);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("could not send confiration email", ex);
+            }
+        }
+
+        public void SendPasswordRestCode(string addressee, string resetCode, string userName) //envio de codigo para recuperar la cuenta.
         {
             var email = new MimeMessage();
             email.From.Add(MailboxAddress.Parse(_options.UserName));
             email.To.Add(MailboxAddress.Parse(addressee));
-            email.Subject = "useted se a registrado en che turnos";
+            email.Subject = "Recuperacion de Contraseña de Che Turnos";
             email.Body = new TextPart(TextFormat.Html)
             {
-                Text = $@"<h2 style=""color: #333; text-align: center;"">¡Bienvenido a CHE Turnos!</h2>
-                   <p style=""font-size: 16px; color: #555;"">Hola <strong>{addressee}</strong>,</p>
-                   <p style=""font-size: 16px; color: #555;"">Estamos emocionados de informarte que tu registro fue exitoso. Ahora puedes comenzar a usar tu cuenta para explorar todas las funciones que ofrecemos.</p>"
+                Text = $@"<p>Hola,{userName}</p>
+                  <p>Hemos recibido una solicitud para restablecer su contraseña.  Utilice el siguiente código para restablecer su contraseña</p>
+<p> Tiene 15 minutos antes de que se venza su codigo para restablecer su contraseña.</p>
+                  <h3>{resetCode}</h3>
+                  <p>Si no has solicitado restablecer tu contraseña, ignora este correo electrónico.</p>"
             };
+            using var smtp = new MailKit.Net.Smtp.SmtpClient();
+            smtp.Connect(_options.Host, _options.Port, SecureSocketOptions.StartTls);
+            smtp.Authenticate(_options.UserName, _options.Password);
+            smtp.Send(email);
+            smtp.Disconnect(true);
+        }
 
+        public void changePassword(string addressee, string userName)
+        {
+            var email = new MimeMessage();
+            email.From.Add(MailboxAddress.Parse(_options.UserName));
+            email.To.Add(MailboxAddress.Parse(addressee));
+            email.Subject = "Recuperacion de Contraseña de Che Turnos";
+            email.Body = new TextPart(TextFormat.Html)
+            {
+                Text = $@"<p>Hola, {userName}</p>
+                  <p>Hemos restablecido su contraseña.</p>
+                  <h3></h3>
+                  <p>Ahora puedes seguir gestionando tus turnos.</p>"
+            };
 
             using var smtp = new MailKit.Net.Smtp.SmtpClient();
             smtp.Connect(_options.Host, _options.Port, SecureSocketOptions.StartTls);
             smtp.Authenticate(_options.UserName, _options.Password);
             smtp.Send(email);
             smtp.Disconnect(true);
-
         }
 
         public class EmailSettingsOptions

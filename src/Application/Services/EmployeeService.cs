@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Application.Services
@@ -17,10 +18,14 @@ namespace Application.Services
     public class EmployeeService : IEmployeeService
     {
         private readonly IEmployeeRepository _employeeRepository;
+        private readonly IRepositoryUser _userRepository;
+        private readonly IEmailService _emailService;
 
-        public EmployeeService(IEmployeeRepository employeeRepository)
+        public EmployeeService(IEmployeeRepository employeeRepository, IRepositoryUser userRepository, IEmailService emailService)
         {
             _employeeRepository = employeeRepository;
+            _userRepository = userRepository;
+            _emailService = emailService;
         }
 
         public bool Create(EmployeeCreateRequestDTO request)
@@ -128,9 +133,6 @@ namespace Application.Services
             {
                throw new Exception(ex.ToString());
             }
-        
-            
-            
 
         }
 
@@ -154,6 +156,68 @@ namespace Application.Services
                 throw new Exception(ex.ToString());
             }
 
+        }
+
+        public void RequestPassReset(string email) //Pide la clave para cambiar su contraseña
+        {
+            var user = _userRepository.GetByEmail(email)
+                ?? throw new NotFoundException($"{email} is not registered");
+            //genero un codigo de 6 digitos para recuperar la pass
+            //GUID: valor único de 16 bytes, substring: extrae los 6 primeros caracteres.
+            var resetCode = Guid.NewGuid().ToString().Substring(0, 6);
+
+            // el tiempo de expiración del codigo 15 minutos
+            var expirationTime = DateTime.UtcNow.AddMinutes(15);
+
+            //se guarda los datos en la bd
+            _userRepository.SavePassResetCode(email, resetCode, expirationTime);
+
+            //Se envia mail con el pass para recuperar la resetear la contraseña.
+            _emailService.SendPasswordRestCode(email, resetCode, user.Name);
+        }
+
+        public void ResetPassword(ResetPasswordRequest request) //cambia su contraseña con la clabe pedida
+        {
+            var user = _userRepository.GetByEmail(request.email)
+                ?? throw new NotFoundException($"{request.email} is not registered");
+
+            //Valida si expiro el codigo
+            if (DateTime.UtcNow > user.ResetCodeExpiration)
+            {
+                throw new Exception("the password recovery code has expired");
+            }
+
+            if (request.Code != user.PasswordResetCode)
+            {
+                throw new Exception("The recovery code is not correct ");
+            }
+
+            if (!ValidatePassword(request.NewPassword))
+            {
+                throw new Exception("The password does not meet requirements.");
+            }
+
+            var userUpdateDto = new EmployeeUpdateRequest();
+            userUpdateDto.Password = request.NewPassword;
+            userUpdateDto.Name = user.Name;
+            userUpdateDto.Email = user.Email;
+
+            Update(user.Id, userUpdateDto);
+            _emailService.changePassword(user.Email, user.Name);
+        }
+
+        private bool ValidatePassword(string password)
+        {
+            //comprobamos si la contraseña es nula o tiene menos de 8 caracteres
+            if (string.IsNullOrEmpty(password) || password.Length < 8)
+            {
+                return false;
+            }
+
+            /*con esta expresión regular verificaremos que la contraseña contenga al menos una letra y un número*/
+            string pattern = @"^(?=.*[a-zA-Z])(?=.*\d).+$";
+            //la siguiente función devolverá true si hay match, y false en caso contrario
+            return Regex.IsMatch(password, pattern);
         }
     }
 }

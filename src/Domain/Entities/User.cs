@@ -26,6 +26,13 @@ namespace Domain.Entities
         public Status Status { get; set; } = Status.Active;
 
 
+        // Almacena el código para recuperar la contraseña
+        public string PasswordResetCode { get; set; }
+
+        // Almacenar la fecha y hora de caducidad del código se usa para hacer validaciones.
+        public DateTime? ResetCodeExpiration { get; set; }
+        public string ImgUrl { get; set; }
+
         public User() { }
 
         public User(string name, string email, string password, UserType type)

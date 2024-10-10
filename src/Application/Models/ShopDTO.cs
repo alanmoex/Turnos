@@ -17,6 +17,7 @@ namespace Application.Models
         public TimeOnly TimeStart { get; set; }
         public TimeOnly TimeEnd { get; set; }
         public List<Days> WorkDays { get; set; }
+        public string ImgUrl { get; set; }
 
         public static ShopDTO Create(Shop shop)
         {
@@ -33,6 +34,7 @@ namespace Application.Models
             dto.TimeStart = shop.TimeStart;
             dto.TimeEnd = shop.TimeEnd;
             dto.WorkDays = shop.WorkDays;
+            dto.ImgUrl = shop.ImgUrl;
             
             return dto;
         }

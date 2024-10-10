@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241010033053_addNewMigration")]
+    partial class addNewMigration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.7");
@@ -55,6 +58,21 @@ namespace Infrastructure.Data.Migrations
                     b.HasIndex("ShopId");
 
                     b.ToTable("Appointments");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ImageUrl", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Images");
                 });
 
             modelBuilder.Entity("Domain.Entities.Service", b =>
@@ -107,9 +125,8 @@ namespace Infrastructure.Data.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ImgUrl")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                    b.Property<int?>("ImgUrlId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsPremium")
                         .HasColumnType("INTEGER");
@@ -140,6 +157,8 @@ namespace Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ImgUrlId");
+
                     b.ToTable("Shops");
                 });
 
@@ -150,10 +169,6 @@ namespace Infrastructure.Data.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ImgUrl")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
@@ -263,6 +278,14 @@ namespace Infrastructure.Data.Migrations
                         .HasForeignKey("ShopId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Domain.Entities.Shop", b =>
+                {
+                    b.HasOne("Domain.Entities.ImageUrl", null)
+                        .WithMany()
+                        .HasForeignKey("ImgUrlId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("Domain.Entities.Employee", b =>

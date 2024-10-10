@@ -2,7 +2,9 @@
 using Application.Interfaces;
 using Application.Models;
 using Application.Models.Requests;
+using Application.Services;
 using Domain.Exceptions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
@@ -130,6 +132,36 @@ namespace API.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPut("[action]")]
+        public ActionResult RequestPasswordReset([FromBody] string email)
+        {
+            try
+            {
+                _employeeService.RequestPassReset(email);
+                return Ok();
+            }
+            catch (NotFoundException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPut("[action]")]
+        public ActionResult ResetPassword(ResetPasswordRequest request)
+        {
+            try
+            {
+                _employeeService.ResetPassword(request);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
             }
         }
     }

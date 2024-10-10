@@ -11,5 +11,7 @@ namespace Domain.Interfaces
     public interface IRepositoryUser: IRepositoryBase<User>
     {
         User? GetByEmail(string email);
+        void SavePassResetCode(string email, string resetCode, DateTime expiration);
+        User GetByPassResetCode(string resetCode);
     }
 }
